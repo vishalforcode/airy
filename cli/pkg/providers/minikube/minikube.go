@@ -69,12 +69,13 @@ func checkInstallation() error {
 }
 
 func (p *provider) startCluster(providerConfig map[string]string) error {
-	minikubeDriver := providerConfig["driver"]
-	if minikubeDriver == "" {
-		minikubeDriver = "docker"
-	}
+	minikubeDriver := getArg(providerConfig, "driver", "docker")
+	minikubeCpus := getArg(providerConfig, "cpus", "4")
+	minikubeMemory := getArg(providerConfig, "memory", "7168")
 	driverArg := "--driver=" + minikubeDriver
-	args := []string{"start", "--cpus=4", "--memory=7168", "--extra-config=apiserver.service-node-port-range=1-65535", driverArg}
+	cpusArg := "--cpus=" + minikubeCpus
+	memoryArg := "--memory=" + minikubeMemory
+	args := []string{"start", "--extra-config=apiserver.service-node-port-range=1-65535", "--vm", driverArg, cpusArg, memoryArg}
 	// Prevent minikube download progress bar from polluting the output
 	_, err := runGetOutput(append(args, "--download-only")...)
 	if err != nil {
@@ -144,4 +145,12 @@ func (p *provider) PostInstallation(providerConfig map[string]string, namespace 
 	}
 
 	return AddHostRecord()
+}
+
+func getArg(providerConfig map[string]string, key string, fallback string) string {
+	value := providerConfig[key]
+	if value == "" {
+		return fallback
+	}
+	return value
 }
